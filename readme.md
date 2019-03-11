@@ -1,7 +1,8 @@
 # Joseki
 
 Joseki is a simple code generator to help with class generation, based on design patterns. Basically; you select your
-language & design pattern, change the JSON configuration and hit "Generate" to get the class source code.
+language & design pattern, change the JSON configuration and hit "Generate" to get the class source code. 
+Demo available here: [https://youtu.be/vhbdofOGbXg](https://youtu.be/vhbdofOGbXg)
 
 ## Adding a new class
 
