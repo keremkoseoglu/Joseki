@@ -15,10 +15,121 @@ class Abap(AbstractLanguage):
 
         if self._pattern.name == PAT_NULL:
             raise Exception("No pattern assigned")
+        elif self._pattern.name == PAT_CACHED_DATA:
+            return self._get_artifacts_of_cached_data()
         elif self._pattern.name == PAT_MULTITON:
             return self._get_artifacts_of_multiton()
         else:
             raise Exception("Unsupported pattern: " + self._pattern.name)
+
+    def _get_artifacts_of_cached_data(self) -> []:
+
+        method_name = self._pattern.properties["method_name"].lower()
+        entered_type = self._pattern.properties["type_name"].lower()
+        type_name = "t_" + entered_type
+        key_type_name = "t_" + entered_type + "_key"
+        fld_type_name = "t_" + entered_type + "_fld"
+        table_type_name = "t" + type_name
+        variable = self._pattern.properties["variable"].lower()
+        itab_name = "gt_" + variable
+        field_symbol = "<ls_" + variable + ">"
+        work_area = "ls_" + variable
+
+        if "exception" in self._pattern.properties:
+            exception = self._pattern.properties["exception"]
+        else:
+            exception = ""
+
+        art = Artifact()
+        art.name = method_name
+        art.file_name = art.name + Abap._FILE_EXTENSION
+
+        art.content.append("##TODO. \" Move this type to the class header")
+        art.content.append("  TYPES:")
+        art.content.append("    BEGIN OF " + key_type_name + ",")
+        for key in self._pattern.properties["keys"]:
+            art.content.append("      " + key["name"] + " TYPE " + key["type"] + ",")
+        art.content.append("    END OF " + key_type_name + ",")
+        art.content.append("")
+        art.content.append("    BEGIN OF " + fld_type_name + ",")
+        for fld in self._pattern.properties["fields"]:
+            art.content.append("      " + fld["name"] + " TYPE " + fld["type"] + ",")
+        art.content.append("    END OF " + fld_type_name + ",")
+        art.content.append("")
+        art.content.append("    BEGIN OF " + type_name + ",")
+        art.content.append("      key TYPE " + key_type_name + ",")
+        art.content.append("      fld TYPE " + fld_type_name + ",")
+        if exception != "":
+            art.content.append("      cx  TYPE REF TO cx_no_entry_in_table,")
+        art.content.append("    END OF " + type_name + ",")
+        art.content.append("")
+
+        tt_line = "    " + table_type_name + " TYPE HASHED TABLE OF " + type_name
+        tt_line += " WITH UNIQUE KEY primary_key COMPONENTS key."
+        art.content.append(tt_line)
+        art.content.append("")
+
+        art.content.append("##TODO. \" Move this data definition to the class header")
+        data_line = ""
+        if self._pattern.properties["scope"] == "static":
+            data_line = "  CLASS-"
+        data_line += "DATA " + itab_name + " TYPE " + table_type_name + "."
+        art.content.append(data_line)
+
+        art.content.append("")
+        art.content.append("##TODO. \" Move this method definition to the class header")
+        meth_line = "  "
+        if self._pattern.properties["scope"] == "static":
+            meth_line = "CLASS-"
+        meth_line += "METHODS " + method_name
+        art.content.append(meth_line)
+        art.content.append("    IMPORTING !is_key TYPE " + key_type_name)
+        ret_line = "    RETURNING VALUE(rs_fld) TYPE " + fld_type_name
+        if exception == "":
+            art.content.append(ret_line + ".")
+        else:
+            art.content.append(ret_line)
+            art.content.append("    RAISING   " + exception + ".")
+
+        art.content.append("")
+        art.content.append("##TODO. \" Move this method implementation to the class body")
+        art.content.append("  METHOD " + art.name.lower() + ".")
+        art.content.append("")
+
+        art.content.append("    ASSIGN " + itab_name + "[ ")
+        art.content.append("        KEY primary_key COMPONENTS key = is_key")
+        art.content.append("      ] TO FIELD-SYMBOL(" + field_symbol + ").")
+        art.content.append("")
+        art.content.append("    IF sy-subrc NE 0.")
+        art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = is_key ).")
+        art.content.append("")
+        if exception != "":
+            art.content.append("      TRY.")
+
+        fill_line = "          ##TODO. \" Fill " + work_area + "-FLD here"
+        if exception != "":
+            fill_line += " and raise " + exception + " if needed"
+        art.content.append(fill_line)
+
+        if exception != "":
+            art.content.append("        CATCH " + exception + " INTO " + work_area + "-cx ##NO_HANDLER.")
+            art.content.append("      ENDTRY.")
+
+        art.content.append("")
+        art.content.append("      INSERT " + work_area + " INTO TABLE " + itab_name + " ASSIGNING " + field_symbol + ".")
+        art.content.append("    ENDIF.")
+        art.content.append("")
+        if exception != "":
+            art.content.append("    IF " + field_symbol + "-cx IS NOT INITIAL.")
+            art.content.append("      RAISE EXCEPTION " + field_symbol + "-cx.")
+            art.content.append("    ENDIF.")
+            art.content.append("")
+        art.content.append("    rs_fld = " + field_symbol + "-fld.")
+
+        art.content.append("")
+        art.content.append("  ENDMETHOD.")
+
+        return [art]
 
     def _get_artifacts_of_multiton(self) -> []:
 
