@@ -17,6 +17,8 @@ class Abap(AbstractLanguage):
             raise Exception("No pattern assigned")
         elif self._pattern.name == PAT_CACHED_DATA:
             return self._get_artifacts_of_cached_data()
+        elif self._pattern.name == PAT_LAZY_INITIALIZATION:
+            return self._get_artifacts_of_lazy_initialization()
         elif self._pattern.name == PAT_MULTITON:
             return self._get_artifacts_of_multiton()
         else:
@@ -34,6 +36,7 @@ class Abap(AbstractLanguage):
         itab_name = "gt_" + variable
         field_symbol = "<ls_" + variable + ">"
         work_area = "ls_" + variable
+        is_static = self._pattern.properties["scope"].lower() == "static"
 
         if "exception" in self._pattern.properties:
             exception = self._pattern.properties["exception"]
@@ -71,7 +74,7 @@ class Abap(AbstractLanguage):
 
         art.content.append("##TODO. \" Move this data definition to the class header")
         data_line = ""
-        if self._pattern.properties["scope"] == "static":
+        if is_static:
             data_line = "  CLASS-"
         data_line += "DATA " + itab_name + " TYPE " + table_type_name + "."
         art.content.append(data_line)
@@ -79,7 +82,7 @@ class Abap(AbstractLanguage):
         art.content.append("")
         art.content.append("##TODO. \" Move this method definition to the class header")
         meth_line = "  "
-        if self._pattern.properties["scope"] == "static":
+        if is_static:
             meth_line = "CLASS-"
         meth_line += "METHODS " + method_name
         art.content.append(meth_line)
@@ -127,6 +130,57 @@ class Abap(AbstractLanguage):
         art.content.append("    rs_fld = " + field_symbol + "-fld.")
 
         art.content.append("")
+        art.content.append("  ENDMETHOD.")
+
+        return [art]
+
+    def _get_artifacts_of_lazy_initialization(self) -> []:
+        method_name = self._pattern.properties["method_name"].lower()
+        is_static = self._pattern.properties["scope"].lower() == "static"
+        variable = self._pattern.properties["variable"].lower()
+        type_name = self._pattern.properties["type_name"].lower()
+        flag = "gv_" + variable + "_read"
+
+        if "exception" in self._pattern.properties:
+            exception = self._pattern.properties["exception"]
+        else:
+            exception = ""
+
+        art = Artifact()
+        art.name = method_name
+        art.file_name = art.name + Abap._FILE_EXTENSION
+
+        art.content.append("##TODO. \" Move data definitions to class header")
+        data_line = "    "
+        if is_static:
+            data_line += "CLASS-"
+        data_line += "DATA:"
+        art.content.append(data_line)
+        art.content.append("      " + variable + " TYPE " + type_name + ",")
+        art.content.append("      " + flag + " TYPE abap_bool.")
+        art.content.append("")
+
+        art.content.append("##TODO. \" Move method definition to class header")
+        method_line = "    "
+        if is_static:
+            method_line += "CLASS-"
+        method_line += "METHODS " + method_name
+        if exception != "":
+            method_line += " RAISING " + exception
+        method_line += "."
+        art.content.append(method_line)
+        art.content.append("")
+
+        art.content.append("##TODO. \" Move method to class body")
+        art.content.append("  METHOD " + method_name + ".")
+        art.content.append("    CHECK " + flag + " EQ abap_false.")
+        art.content.append("")
+        todo_line = "    ##TODO. \" Fill " + variable
+        if exception != "":
+            todo_line += " and raise " + exception + " if needed"
+        art.content.append(todo_line)
+        art.content.append("")
+        art.content.append("    " + flag + " = abap_true.")
         art.content.append("  ENDMETHOD.")
 
         return [art]
