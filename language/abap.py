@@ -200,7 +200,7 @@ class Abap(AbstractLanguage):
         # Class definition
         ##############################
 
-        art.content.append("CLASS " + art.name + " DEFINITION CREATE PRIVATE.")
+        art.content.append("CLASS " + art.name + " DEFINITION PUBLIC FINAL CREATE PRIVATE.")
         art.content.append("")
         art.content.append("  PUBLIC SECTION.")
         art.content.append("")
@@ -273,12 +273,12 @@ class Abap(AbstractLanguage):
         art.content.append("    IF sy-subrc NE 0.")
         art.content.append("      RAISE EXCEPTION TYPE cx_no_entry_in_table")
         art.content.append("        EXPORTING")
-        art.content.append("          table_name = c_tabname-def")
+        art.content.append("          table_name = CONV #( c_tabname-def )")
         entry_name = ""
         for key in self._pattern.properties["keys"]:
             if entry_name != "":
                 entry_name += " "
-            entry_name += "{ iv_" + key["name"].lower() + " }"
+            entry_name += "{ is_key-" + key["name"].lower() + " }"
         art.content.append("          entry_name = |" + entry_name + "|.")
         art.content.append("    ENDIF.")
         art.content.append("")
