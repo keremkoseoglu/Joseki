@@ -99,9 +99,8 @@ class Abap(AbstractLanguage):
         art.content.append("  METHOD " + art.name.lower() + ".")
         art.content.append("")
 
-        art.content.append("    ASSIGN " + itab_name + "[ ")
-        art.content.append("        KEY primary_key COMPONENTS key = is_key")
-        art.content.append("      ] TO FIELD-SYMBOL(" + field_symbol + ").")
+        art.content.append("    ASSIGN " + itab_name + "[ KEY primary_key COMPONENTS key = is_key")
+        art.content.append("                            ] TO FIELD-SYMBOL(" + field_symbol + ").")
         art.content.append("")
         art.content.append("    IF sy-subrc NE 0.")
         art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = is_key ).")
@@ -129,7 +128,6 @@ class Abap(AbstractLanguage):
             art.content.append("")
         art.content.append("    rs_fld = " + field_symbol + "-fld.")
 
-        art.content.append("")
         art.content.append("  ENDMETHOD.")
 
         return [art]
@@ -257,18 +255,22 @@ class Abap(AbstractLanguage):
         art.content.append("  METHOD constructor.")
         art.content.append("")
         art.content.append("    SELECT SINGLE *")
-        art.content.append("      FROM " + self._pattern.properties["master_table"].lower())
-        art.content.append("      WHERE")
+        art.content.append("           FROM " + self._pattern.properties["master_table"].lower())
+
 
         pos = 0
         for key in self._pattern.properties["keys"]:
-            line = "        " + key["name"].lower() + " EQ @is_key-" + key["name"].lower()
+            if pos == 0:
+                line = "           WHERE "
+            else:
+                line = "                 "
+            line += key["name"].lower() + " EQ @is_key-" + key["name"].lower()
             pos += 1
             if pos < len(self._pattern.properties["keys"]):
                 line += " AND"
             art.content.append(line)
 
-        art.content.append("      INTO CORRESPONDING FIELDS OF @gs_def.")
+        art.content.append("           INTO CORRESPONDING FIELDS OF @gs_def.")
         art.content.append("")
         art.content.append("    IF sy-subrc NE 0.")
         art.content.append("      RAISE EXCEPTION TYPE cx_no_entry_in_table")
@@ -284,11 +286,11 @@ class Abap(AbstractLanguage):
         art.content.append("")
         art.content.append("  ENDMETHOD.")
         art.content.append("")
+        art.content.append("")
         art.content.append("  METHOD get_instance.")
         art.content.append("")
-        art.content.append("    ASSIGN gt_multiton[ ")
-        art.content.append("        KEY primary_key COMPONENTS key = is_key")
-        art.content.append("      ] TO FIELD-SYMBOL(<ls_multiton>).")
+        art.content.append("    ASSIGN gt_multiton[ KEY primary_key COMPONENTS key = is_key")
+        art.content.append("                      ] TO FIELD-SYMBOL(<ls_multiton>).")
         art.content.append("")
         art.content.append("    IF sy-subrc NE 0.")
         art.content.append("      DATA(ls_multiton) = VALUE t_multiton( key = is_key ).")
@@ -306,7 +308,6 @@ class Abap(AbstractLanguage):
         art.content.append("    ENDIF.")
         art.content.append("")
         art.content.append("    ro_obj = <ls_multiton>-obj.")
-        art.content.append("")
         art.content.append("  ENDMETHOD.")
         art.content.append("")
         art.content.append("ENDCLASS.")
