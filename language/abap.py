@@ -1,13 +1,17 @@
+""" ABAP module """
 from language.abstract_language import AbstractLanguage
 from artifact.artifact import Artifact
-from pattern.design_pattern import *
+from pattern.design_pattern import \
+    PAT_CACHED_DATA, PAT_LAZY_INITIALIZATION, PAT_MULTITON, PAT_NULL, DesignPattern
 
 
 class Abap(AbstractLanguage):
+    """ ABAP language """
 
     _FILE_EXTENSION = ".txt"
 
     def __init__(self):
+        super().__init__()
         self._pattern = DesignPattern(PAT_NULL)
 
     def get_artifacts(self, pattern: DesignPattern) -> []:
@@ -15,14 +19,13 @@ class Abap(AbstractLanguage):
 
         if self._pattern.name == PAT_NULL:
             raise Exception("No pattern assigned")
-        elif self._pattern.name == PAT_CACHED_DATA:
+        if self._pattern.name == PAT_CACHED_DATA:
             return self._get_artifacts_of_cached_data()
-        elif self._pattern.name == PAT_LAZY_INITIALIZATION:
+        if self._pattern.name == PAT_LAZY_INITIALIZATION:
             return self._get_artifacts_of_lazy_initialization()
-        elif self._pattern.name == PAT_MULTITON:
+        if self._pattern.name == PAT_MULTITON:
             return self._get_artifacts_of_multiton()
-        else:
-            raise Exception("Unsupported pattern: " + self._pattern.name)
+        raise Exception("Unsupported pattern: " + self._pattern.name)
 
     def _get_artifacts_of_cached_data(self) -> []:
 
@@ -103,7 +106,7 @@ class Abap(AbstractLanguage):
         art.content.append("                            ] TO FIELD-SYMBOL(" + field_symbol + ").")
         art.content.append("")
         art.content.append("    IF sy-subrc NE 0.")
-        art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = is_key ).")
+        art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = is_key ).") # pylint: disable=C0301
         art.content.append("")
         if exception != "":
             art.content.append("      TRY.")
@@ -114,11 +117,11 @@ class Abap(AbstractLanguage):
         art.content.append(fill_line)
 
         if exception != "":
-            art.content.append("        CATCH " + exception + " INTO " + work_area + "-cx ##NO_HANDLER.")
+            art.content.append("        CATCH " + exception + " INTO " + work_area + "-cx ##NO_HANDLER.") # pylint: disable=C0301
             art.content.append("      ENDTRY.")
 
         art.content.append("")
-        art.content.append("      INSERT " + work_area + " INTO TABLE " + itab_name + " ASSIGNING " + field_symbol + ".")
+        art.content.append("      INSERT " + work_area + " INTO TABLE " + itab_name + " ASSIGNING " + field_symbol + ".") # pylint: disable=C0301
         art.content.append("    ENDIF.")
         art.content.append("")
         if exception != "":
@@ -205,10 +208,10 @@ class Abap(AbstractLanguage):
         art.content.append("    TYPES:")
         art.content.append("      BEGIN OF t_key,")
         for key in self._pattern.properties["keys"]:
-            art.content.append("        " + key["name"].lower() + " TYPE " + key["type"].lower() + ",")
+            art.content.append("        " + key["name"].lower() + " TYPE " + key["type"].lower() + ",") # pylint: disable=C0301
         art.content.append("      END OF t_key.")
         art.content.append("")
-        art.content.append("    DATA gs_def TYPE " + self._pattern.properties["master_table"].lower() + " READ-ONLY.")
+        art.content.append("    DATA gs_def TYPE " + self._pattern.properties["master_table"].lower() + " READ-ONLY.") # pylint: disable=C0301
         art.content.append("")
         art.content.append("    CLASS-METHODS:")
         art.content.append("      get_instance")
@@ -233,7 +236,7 @@ class Abap(AbstractLanguage):
         art.content.append("")
         art.content.append("    CONSTANTS:")
         art.content.append("      BEGIN OF c_tabname,")
-        art.content.append("        def TYPE tabname VALUE '" + self._pattern.properties["master_table"].upper() + "',")
+        art.content.append("        def TYPE tabname VALUE '" + self._pattern.properties["master_table"].upper() + "',") # pylint: disable=C0301
         art.content.append("      END OF c_tabname.")
         art.content.append("")
         art.content.append("    CLASS-DATA gt_multiton TYPE tt_multiton.")
@@ -300,7 +303,7 @@ class Abap(AbstractLanguage):
         art.content.append("        CATCH cx_no_entry_in_table INTO ls_multiton-cx ##NO_HANDLER.")
         art.content.append("      ENDTRY.")
         art.content.append("")
-        art.content.append("      INSERT ls_multiton INTO TABLE gt_multiton ASSIGNING <ls_multiton>.")
+        art.content.append("      INSERT ls_multiton INTO TABLE gt_multiton ASSIGNING <ls_multiton>.") # pylint: disable=C0301
         art.content.append("    ENDIF.")
         art.content.append("")
         art.content.append("    IF <ls_multiton>-cx IS NOT INITIAL.")
@@ -317,4 +320,3 @@ class Abap(AbstractLanguage):
         ##############################
 
         return [art]
-

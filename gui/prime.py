@@ -1,20 +1,21 @@
+""" GUI entry point """
+import json
 import tkinter
 import tkinter.ttk
 from gui.labeled_combobox import LabeledCombobox
 from gui.labeled_textarea import LabeledTextarea
 from language import factory as lang_factory
-from config.constants import *
+from config.constants import GUI_CELL_HEIGHT
 from pattern import design_pattern
-import json
 
 
 class Prime:
+    """ Primary window """
 
     _WINDOW_WIDTH = 800
     _WINDOW_HEIGHT = 300
 
     def __init__(self):
-
         # Initialization
         self._design_pattern = design_pattern.DesignPattern(design_pattern.PAT_NULL)
         cell_y = 0
@@ -28,11 +29,21 @@ class Prime:
         self._languages = lang_factory.get_all_languages()
         self._language_combo_val = []
         self._build_language_combo_values()
-        self._language_combo = LabeledCombobox(self._root, "Language", self._language_combo_val, 0, cell_y)
+        self._language_combo = LabeledCombobox(
+            self._root,
+            "Language",
+            self._language_combo_val,
+            0,
+            cell_y)
         cell_y += GUI_CELL_HEIGHT
 
         # Pattern selection
-        self._patterns = LabeledCombobox(self._root, "Pattern", design_pattern.ALL_PATTERNS, 0, cell_y)
+        self._patterns = LabeledCombobox(
+            self._root,
+            "Pattern",
+            design_pattern.ALL_PATTERNS,
+            0,
+            cell_y)
         cell_y += GUI_CELL_HEIGHT
 
         pattern_button = tkinter.Button(self._root, text="Configure", command=self._config_pattern)
