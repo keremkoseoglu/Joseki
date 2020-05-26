@@ -1,4 +1,4 @@
-
+""" Design pattern module """
 
 PAT_CACHED_DATA = "Cached Data"
 PAT_LAZY_INITIALIZATION = "Lazy Initialization"
@@ -8,6 +8,7 @@ ALL_PATTERNS = [PAT_CACHED_DATA, PAT_LAZY_INITIALIZATION, PAT_MULTITON]
 
 
 class DesignPattern:
+    """ Design pattern class """
 
     def __init__(self, name: str):
         self.name = name
