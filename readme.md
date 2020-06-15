@@ -4,6 +4,20 @@ Joseki is a simple code generator to help with class generation, based on design
 language & design pattern, change the JSON configuration and hit "Generate" to get the class source code. 
 Demo available here: [https://youtu.be/vhbdofOGbXg](https://youtu.be/vhbdofOGbXg)
 
+## Installation
+
+First, install Vibhaga.
+
+```
+pip install git+http://github.com/keremkoseoglu/vibhaga.git
+```
+
+Then, install Joseki.
+
+```
+pip install git+http://github.com/keremkoseoglu/joseki.git
+```
+
 ## Adding a new class
 
 * Add a new file to the package **language**

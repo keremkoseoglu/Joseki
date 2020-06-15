@@ -1,13 +1,17 @@
+""" ABAP module """
 from language.abstract_language import AbstractLanguage
 from artifact.artifact import Artifact
-from pattern.design_pattern import *
+from pattern.design_pattern import \
+    PAT_CACHED_DATA, PAT_LAZY_INITIALIZATION, PAT_MULTITON, PAT_NULL, DesignPattern
 
 
 class Abap(AbstractLanguage):
+    """ ABAP language """
 
     _FILE_EXTENSION = ".txt"
 
     def __init__(self):
+        super().__init__()
         self._pattern = DesignPattern(PAT_NULL)
 
     def get_artifacts(self, pattern: DesignPattern) -> []:
@@ -15,14 +19,13 @@ class Abap(AbstractLanguage):
 
         if self._pattern.name == PAT_NULL:
             raise Exception("No pattern assigned")
-        elif self._pattern.name == PAT_CACHED_DATA:
+        if self._pattern.name == PAT_CACHED_DATA:
             return self._get_artifacts_of_cached_data()
-        elif self._pattern.name == PAT_LAZY_INITIALIZATION:
+        if self._pattern.name == PAT_LAZY_INITIALIZATION:
             return self._get_artifacts_of_lazy_initialization()
-        elif self._pattern.name == PAT_MULTITON:
+        if self._pattern.name == PAT_MULTITON:
             return self._get_artifacts_of_multiton()
-        else:
-            raise Exception("Unsupported pattern: " + self._pattern.name)
+        raise Exception("Unsupported pattern: " + self._pattern.name)
 
     def _get_artifacts_of_cached_data(self) -> []:
 
@@ -111,7 +114,7 @@ class Abap(AbstractLanguage):
         art.content.append(fill_line)
 
         if exception != "":
-            art.content.append("        CATCH " + exception + " INTO " + work_area + "-cx ##NO_HANDLER.")
+            art.content.append("        CATCH " + exception + " INTO " + work_area + "-cx ##NO_HANDLER.") # pylint: disable=C0301
             art.content.append("      ENDTRY.")
 
         art.content.append("")
@@ -299,4 +302,3 @@ class Abap(AbstractLanguage):
         ##############################
 
         return [art]
-
