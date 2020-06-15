@@ -28,15 +28,15 @@ class Abap(AbstractLanguage):
 
         method_name = self._pattern.properties["method_name"].lower()
         entered_type = self._pattern.properties["type_name"].lower()
-        type_name = "t_" + entered_type
-        key_type_name = "t_" + entered_type + "_key"
-        fld_type_name = "t_" + entered_type + "_fld"
-        table_type_name = "t" + type_name
+        type_name = entered_type + "_dict"
+        key_type_name = entered_type + "_key_dict"
+        fld_type_name = entered_type + "_fld_dict"
+        table_type_name = entered_type + "_list"
         variable = self._pattern.properties["variable"].lower()
-        itab_name = "gt_" + variable
-        field_symbol = "<ls_" + variable + ">"
-        work_area = "ls_" + variable
-        is_static = self._pattern.properties["scope"].lower() == "static"
+        itab_name = variable + "s"
+        field_symbol = "<" + variable + ">"
+        work_area = variable
+        static = self._pattern.properties["scope"].lower() == "static"
 
         if "exception" in self._pattern.properties:
             exception = self._pattern.properties["exception"]
@@ -48,62 +48,59 @@ class Abap(AbstractLanguage):
         art.file_name = art.name + Abap._FILE_EXTENSION
 
         art.content.append("##TODO. \" Move this type to the class header")
-        art.content.append("  TYPES:")
-        art.content.append("    BEGIN OF " + key_type_name + ",")
+        art.content.append("  TYPES: BEGIN OF " + key_type_name + ",")
         for key in self._pattern.properties["keys"]:
-            art.content.append("      " + key["name"] + " TYPE " + key["type"] + ",")
-        art.content.append("    END OF " + key_type_name + ",")
+            art.content.append("           " + key["name"] + " TYPE " + key["type"] + ",")
+        art.content.append("         END OF " + key_type_name + ".")
         art.content.append("")
-        art.content.append("    BEGIN OF " + fld_type_name + ",")
+        art.content.append("  TYPES: BEGIN OF " + fld_type_name + ",")
         for fld in self._pattern.properties["fields"]:
-            art.content.append("      " + fld["name"] + " TYPE " + fld["type"] + ",")
-        art.content.append("    END OF " + fld_type_name + ",")
+            art.content.append("           " + fld["name"] + " TYPE " + fld["type"] + ",")
+        art.content.append("         END OF " + fld_type_name + ".")
         art.content.append("")
-        art.content.append("    BEGIN OF " + type_name + ",")
-        art.content.append("      key TYPE " + key_type_name + ",")
-        art.content.append("      fld TYPE " + fld_type_name + ",")
+        art.content.append("  TYPES: BEGIN OF " + type_name + ",")
+        art.content.append("           key TYPE " + key_type_name + ",")
+        art.content.append("           fld TYPE " + fld_type_name + ",")
         if exception != "":
-            art.content.append("      cx  TYPE REF TO cx_no_entry_in_table,")
-        art.content.append("    END OF " + type_name + ",")
+            art.content.append("           cx  TYPE REF TO cx_no_entry_in_table,")
+        art.content.append("         END OF " + type_name + ",")
         art.content.append("")
 
-        tt_line = "    " + table_type_name + " TYPE HASHED TABLE OF " + type_name
+        tt_line = "         " + table_type_name + " TYPE HASHED TABLE OF " + type_name
         tt_line += " WITH UNIQUE KEY primary_key COMPONENTS key."
         art.content.append(tt_line)
         art.content.append("")
 
         art.content.append("##TODO. \" Move this data definition to the class header")
-        data_line = ""
-        if is_static:
-            data_line = "  CLASS-"
+        data_line = "  "
+        if static:
+            data_line = "CLASS-"
         data_line += "DATA " + itab_name + " TYPE " + table_type_name + "."
         art.content.append(data_line)
 
         art.content.append("")
         art.content.append("##TODO. \" Move this method definition to the class header")
-        meth_line = "  "
-        if is_static:
+        meth_line = "    "
+        if static:
             meth_line = "CLASS-"
         meth_line += "METHODS " + method_name
         art.content.append(meth_line)
-        art.content.append("    IMPORTING !is_key TYPE " + key_type_name)
-        ret_line = "    RETURNING VALUE(rs_fld) TYPE " + fld_type_name
+        art.content.append("  IMPORTING !key TYPE " + key_type_name)
+        ret_line = "  RETURNING VALUE(fld) TYPE " + fld_type_name
         if exception == "":
             art.content.append(ret_line + ".")
         else:
             art.content.append(ret_line)
-            art.content.append("    RAISING   " + exception + ".")
+            art.content.append("  RAISING   " + exception + ".")
 
         art.content.append("")
         art.content.append("##TODO. \" Move this method implementation to the class body")
         art.content.append("  METHOD " + art.name.lower() + ".")
-        art.content.append("")
-
-        art.content.append("    ASSIGN " + itab_name + "[ KEY primary_key COMPONENTS key = is_key")
-        art.content.append("                            ] TO FIELD-SYMBOL(" + field_symbol + ").")
-        art.content.append("")
+        art.content.append("    ASSIGN me->" + itab_name + "[") 
+        art.content.append("        KEY primary_key COMPONENTS key = key")
+        art.content.append("      ] TO FIELD-SYMBOL(" + field_symbol + ").")
         art.content.append("    IF sy-subrc NE 0.")
-        art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = is_key ).")
+        art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = key ).")
         art.content.append("")
         if exception != "":
             art.content.append("      TRY.")
@@ -118,7 +115,7 @@ class Abap(AbstractLanguage):
             art.content.append("      ENDTRY.")
 
         art.content.append("")
-        art.content.append("      INSERT " + work_area + " INTO TABLE " + itab_name + " ASSIGNING " + field_symbol + ".")
+        art.content.append("      INSERT " + work_area + " INTO TABLE me->" + itab_name + " ASSIGNING " + field_symbol + ".")
         art.content.append("    ENDIF.")
         art.content.append("")
         if exception != "":
@@ -126,7 +123,7 @@ class Abap(AbstractLanguage):
             art.content.append("      RAISE EXCEPTION " + field_symbol + "-cx.")
             art.content.append("    ENDIF.")
             art.content.append("")
-        art.content.append("    rs_fld = " + field_symbol + "-fld.")
+        art.content.append("    fld = " + field_symbol + "-fld.")
 
         art.content.append("  ENDMETHOD.")
 
@@ -134,10 +131,10 @@ class Abap(AbstractLanguage):
 
     def _get_artifacts_of_lazy_initialization(self) -> []:
         method_name = self._pattern.properties["method_name"].lower()
-        is_static = self._pattern.properties["scope"].lower() == "static"
+        static = self._pattern.properties["scope"].lower() == "static"
         variable = self._pattern.properties["variable"].lower()
         type_name = self._pattern.properties["type_name"].lower()
-        flag = "gv_" + variable + "_read"
+        flag = variable + "_read"
 
         if "exception" in self._pattern.properties:
             exception = self._pattern.properties["exception"]
@@ -150,9 +147,9 @@ class Abap(AbstractLanguage):
 
         art.content.append("##TODO. \" Move data definitions to class header")
         data_line = "    "
-        if is_static:
+        if static:
             data_line += "CLASS-"
-        data_line += "DATA:"
+        data_line += "DATA: "
         art.content.append(data_line)
         art.content.append("      " + variable + " TYPE " + type_name + ",")
         art.content.append("      " + flag + " TYPE abap_bool.")
@@ -160,7 +157,7 @@ class Abap(AbstractLanguage):
 
         art.content.append("##TODO. \" Move method definition to class header")
         method_line = "    "
-        if is_static:
+        if static:
             method_line += "CLASS-"
         method_line += "METHODS " + method_name
         if exception != "":
@@ -171,7 +168,7 @@ class Abap(AbstractLanguage):
 
         art.content.append("##TODO. \" Move method to class body")
         art.content.append("  METHOD " + method_name + ".")
-        art.content.append("    CHECK " + flag + " EQ abap_false.")
+        art.content.append("    CHECK " + flag + " = abap_false.")
         art.content.append("")
         todo_line = "    ##TODO. \" Fill " + variable
         if exception != "":
@@ -201,48 +198,39 @@ class Abap(AbstractLanguage):
         art.content.append("CLASS " + art.name + " DEFINITION PUBLIC FINAL CREATE PRIVATE.")
         art.content.append("")
         art.content.append("  PUBLIC SECTION.")
-        art.content.append("")
-        art.content.append("    TYPES:")
-        art.content.append("      BEGIN OF t_key,")
+        art.content.append("    TYPES: BEGIN OF key_dict,")
         for key in self._pattern.properties["keys"]:
-            art.content.append("        " + key["name"].lower() + " TYPE " + key["type"].lower() + ",")
-        art.content.append("      END OF t_key.")
+            art.content.append("             " + key["name"].lower() + " TYPE " + key["type"].lower() + ",")
+        art.content.append("           END OF key_dict.")
         art.content.append("")
-        art.content.append("    DATA gs_def TYPE " + self._pattern.properties["master_table"].lower() + " READ-ONLY.")
+        art.content.append("    DATA def TYPE " + self._pattern.properties["master_table"].lower() + " READ-ONLY.")
         art.content.append("")
-        art.content.append("    CLASS-METHODS:")
-        art.content.append("      get_instance")
-        art.content.append("        IMPORTING !is_key TYPE t_key")
-        art.content.append("        RETURNING VALUE(ro_obj) TYPE REF TO " + art.name.lower())
-        art.content.append("        RAISING   cx_no_entry_in_table.")
+        art.content.append("    CLASS-METHODS get_instance")
+        art.content.append("      IMPORTING !key TYPE key_dict")
+        art.content.append("      RETURNING VALUE(obj) TYPE REF TO " + art.name.lower())
+        art.content.append("      RAISING   cx_no_entry_in_table.")
         art.content.append("")
         art.content.append("  PROTECTED SECTION.")
         art.content.append("")
         art.content.append("  PRIVATE SECTION.")
+        art.content.append("    TYPES: BEGIN OF multiton_dict,")
+        art.content.append("             key TYPE key_dict,")
+        art.content.append("             obj TYPE REF TO " + art.name.lower() + ",")
+        art.content.append("             cx  TYPE REF TO cx_no_entry_in_table,")
+        art.content.append("           END OF multiton_dict,")
         art.content.append("")
-        art.content.append("    TYPES:")
-        art.content.append("      BEGIN OF t_multiton,")
-        art.content.append("        key TYPE t_key,")
-        art.content.append("        obj TYPE REF TO " + art.name.lower() + ",")
-        art.content.append("        cx  TYPE REF TO cx_no_entry_in_table,")
-        art.content.append("      END OF t_multiton,")
+        art.content.append("           multiton_set TYPE HASHED TABLE OF multiton_dict")
+        art.content.append("                        WITH UNIQUE KEY primary_key COMPONENTS key.")
         art.content.append("")
-        art.content.append("      tt_multiton")
-        art.content.append("        TYPE HASHED TABLE OF t_multiton")
-        art.content.append("        WITH UNIQUE KEY primary_key COMPONENTS key.")
+        art.content.append("    CONSTANTS: BEGIN OF table,")
+        art.content.append("                 def TYPE tabname VALUE '" + self._pattern.properties["master_table"].upper() + "',")
+        art.content.append("               END OF table.")
         art.content.append("")
-        art.content.append("    CONSTANTS:")
-        art.content.append("      BEGIN OF c_tabname,")
-        art.content.append("        def TYPE tabname VALUE '" + self._pattern.properties["master_table"].upper() + "',")
-        art.content.append("      END OF c_tabname.")
+        art.content.append("    CLASS-DATA multitons TYPE multiton_set.")
         art.content.append("")
-        art.content.append("    CLASS-DATA gt_multiton TYPE tt_multiton.")
-        art.content.append("")
-        art.content.append("    METHODS:")
-        art.content.append("      constructor")
-        art.content.append("        IMPORTING !is_key TYPE t_key")
-        art.content.append("        RAISING   cx_no_entry_in_table.")
-        art.content.append("")
+        art.content.append("    METHODS constructor")
+        art.content.append("      IMPORTING !key TYPE key_dict")
+        art.content.append("      RAISING   cx_no_entry_in_table.")
         art.content.append("ENDCLASS.")
         art.content.append("")
 
@@ -251,9 +239,7 @@ class Abap(AbstractLanguage):
         ##############################
 
         art.content.append("CLASS " + art.name + " IMPLEMENTATION.")
-        art.content.append("")
         art.content.append("  METHOD constructor.")
-        art.content.append("")
         art.content.append("    SELECT SINGLE *")
         art.content.append("           FROM " + self._pattern.properties["master_table"].lower())
 
@@ -264,52 +250,48 @@ class Abap(AbstractLanguage):
                 line = "           WHERE "
             else:
                 line = "                 "
-            line += key["name"].lower() + " EQ @is_key-" + key["name"].lower()
+            line += key["name"].lower() + " = @key-" + key["name"].lower()
             pos += 1
             if pos < len(self._pattern.properties["keys"]):
                 line += " AND"
             art.content.append(line)
 
-        art.content.append("           INTO CORRESPONDING FIELDS OF @gs_def.")
+        art.content.append("           INTO CORRESPONDING FIELDS OF @me->def.")
         art.content.append("")
         art.content.append("    IF sy-subrc NE 0.")
         art.content.append("      RAISE EXCEPTION TYPE cx_no_entry_in_table")
         art.content.append("        EXPORTING")
-        art.content.append("          table_name = CONV #( c_tabname-def )")
+        art.content.append("          table_name = CONV #( table-def )")
         entry_name = ""
         for key in self._pattern.properties["keys"]:
             if entry_name != "":
                 entry_name += " "
-            entry_name += "{ is_key-" + key["name"].lower() + " }"
+            entry_name += "{ key-" + key["name"].lower() + " }"
         art.content.append("          entry_name = |" + entry_name + "|.")
         art.content.append("    ENDIF.")
-        art.content.append("")
         art.content.append("  ENDMETHOD.")
         art.content.append("")
         art.content.append("")
         art.content.append("  METHOD get_instance.")
-        art.content.append("")
-        art.content.append("    ASSIGN gt_multiton[ KEY primary_key COMPONENTS key = is_key")
-        art.content.append("                      ] TO FIELD-SYMBOL(<ls_multiton>).")
-        art.content.append("")
+        art.content.append("    ASSIGN multitons[ KEY primary_key COMPONENTS key = key")
+        art.content.append("                    ] TO FIELD-SYMBOL(<multiton>).")
         art.content.append("    IF sy-subrc NE 0.")
-        art.content.append("      DATA(ls_multiton) = VALUE t_multiton( key = is_key ).")
+        art.content.append("      DATA(multiton) = VALUE multiton_dict( key = key ).")
         art.content.append("")
         art.content.append("      TRY.")
-        art.content.append("          ls_multiton-obj = NEW #( ls_multiton-key ).")
-        art.content.append("        CATCH cx_no_entry_in_table INTO ls_multiton-cx ##NO_HANDLER.")
+        art.content.append("          multiton-obj = NEW #( multiton-key ).")
+        art.content.append("        CATCH cx_no_entry_in_table INTO multiton-cx ##NO_HANDLER.")
         art.content.append("      ENDTRY.")
         art.content.append("")
-        art.content.append("      INSERT ls_multiton INTO TABLE gt_multiton ASSIGNING <ls_multiton>.")
+        art.content.append("      INSERT multiton INTO TABLE multitons ASSIGNING <multiton>.")
         art.content.append("    ENDIF.")
         art.content.append("")
-        art.content.append("    IF <ls_multiton>-cx IS NOT INITIAL.")
-        art.content.append("      RAISE EXCEPTION <ls_multiton>-cx.")
+        art.content.append("    IF <multiton>-cx IS NOT INITIAL.")
+        art.content.append("      RAISE EXCEPTION <multiton>-cx.")
         art.content.append("    ENDIF.")
         art.content.append("")
-        art.content.append("    ro_obj = <ls_multiton>-obj.")
+        art.content.append("    obj = <multiton>-obj.")
         art.content.append("  ENDMETHOD.")
-        art.content.append("")
         art.content.append("ENDCLASS.")
 
         ##############################
