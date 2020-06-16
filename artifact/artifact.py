@@ -21,3 +21,4 @@ class Artifact:
         with open(path, "w") as content_file:
             for content_line in self.content:
                 print(content_line, file=content_file)
+        os.system("open " + path)
