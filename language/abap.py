@@ -8,7 +8,7 @@ from pattern.design_pattern import \
 class Abap(AbstractLanguage):
     """ ABAP language """
 
-    _FILE_EXTENSION = ".txt"
+    _FILE_EXTENSION = ".abap"
 
     def __init__(self):
         super().__init__()
