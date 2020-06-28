@@ -99,7 +99,7 @@ class Abap(AbstractLanguage):
         art.content.append("")
         art.content.append("##TODO. \" Move this method implementation to the class body")
         art.content.append("  METHOD " + art.name.lower() + ".")
-        art.content.append("    ASSIGN me->" + itab_name + "[") 
+        art.content.append("    ASSIGN me->" + itab_name + "[")
         art.content.append("        KEY primary_key COMPONENTS key = key")
         art.content.append("      ] TO FIELD-SYMBOL(" + field_symbol + ").")
         art.content.append("    IF sy-subrc NE 0.")
