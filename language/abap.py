@@ -102,7 +102,7 @@ class Abap(AbstractLanguage):
         art.content.append("    ASSIGN me->" + itab_name + "[")
         art.content.append("        KEY primary_key COMPONENTS key = key")
         art.content.append("      ] TO FIELD-SYMBOL(" + field_symbol + ").")
-        art.content.append("    IF sy-subrc NE 0.")
+        art.content.append("    IF sy-subrc <> 0.")
         art.content.append("      DATA(" + work_area + ") = VALUE " + type_name + "( key = key ).")
         art.content.append("")
         if exception != "":
@@ -261,7 +261,7 @@ class Abap(AbstractLanguage):
 
         art.content.append("           INTO CORRESPONDING FIELDS OF @me->def.")
         art.content.append("")
-        art.content.append("    IF sy-subrc NE 0.")
+        art.content.append("    IF sy-subrc <> 0.")
         art.content.append("      RAISE EXCEPTION TYPE cx_no_entry_in_table")
         art.content.append("        EXPORTING")
         art.content.append("          table_name = CONV #( table-def )")
@@ -278,7 +278,7 @@ class Abap(AbstractLanguage):
         art.content.append("  METHOD get_instance.")
         art.content.append("    ASSIGN multitons[ KEY primary_key COMPONENTS key = key")
         art.content.append("                    ] TO FIELD-SYMBOL(<multiton>).")
-        art.content.append("    IF sy-subrc NE 0.")
+        art.content.append("    IF sy-subrc <> 0.")
         art.content.append("      DATA(multiton) = VALUE multiton_dict( key = key ).")
         art.content.append("")
         art.content.append("      TRY.")
